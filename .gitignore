@@ -1,0 +1,7 @@
+# Local secrets (WiFi credentials) — copy config.example.h to config.h
+esp32-cam/robot_eye/config.h
+
+# Arduino / build artifacts
+build/
+*.bin
+*.elf
