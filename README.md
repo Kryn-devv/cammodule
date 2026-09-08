@@ -72,6 +72,7 @@ which is more than a dev board's regulator will give you on top of two OLEDs
 and an amplifier. Brownouts are the single most common cause of an ESP32-CAM
 that reboots, refuses to start its camera, or drops frames — so `GET /status`
 reports `reset_reason`, and `"brownout"` there means the supply, not the code.
+Power banks, USB ports and runtimes are covered in [Powering it](#powering-it).
 
 ### Why face recognition runs in the brain, not on the camera
 
@@ -215,25 +216,92 @@ request for a bigger frame has somewhere to put the picture.
 ## Hardware
 
 - AI-Thinker ESP32-CAM (OV2640, 4 MB PSRAM)
-- USB-to-serial adapter (FTDI / CP2102) for flashing — the board has no USB port
-- **5V supply able to give ~500 mA.** See the power note above.
+- **ESP32-CAM-MB** — the little board the camera plugs into. It carries a
+  CH340 USB-serial chip, a micro-USB socket and two buttons (`RST`, `IO0`).
+  It is a programmer and a power feed, not a bridge to anything: it connects
+  the camera to your PC, and the camera still talks to the S3 over WiFi.
+  Without it you need a separate USB-serial adapter (FTDI / CP2102), because
+  the camera board itself has no USB port.
+- **5V able to give ~500 mA** — a PC's USB port, a phone charger, or a power
+  bank. See [Powering it](#powering-it).
 
 Different board? Set `CAMERA_MODEL_*` in `config.h` — `camera_pins.h` carries
 AI-Thinker, ESP32-S3-EYE, XIAO ESP32S3 Sense, WROVER-KIT and ESP-EYE.
 
 ## Flashing
 
-1. Arduino IDE → install the **esp32** boards package (Espressif Systems), 2.0.5 or newer.
-2. **Tools → Board →** "AI Thinker ESP32-CAM"; **Partition Scheme →** "Huge APP"; **PSRAM →** "Enabled".
-3. Copy `esp32-cam/robot_eye/config.example.h` to `config.h` and fill in your
-   WiFi name and password. (`config.h` is gitignored, so your password stays local.)
-4. Wire the adapter: `5V→5V`, `GND→GND`, `TX→U0R`, `RX→U0T`.
-5. Hold **GPIO0 to GND**, press reset — the board is in flash mode. Upload.
-6. Disconnect GPIO0, press reset. Serial Monitor at **115200 baud** prints the
-   IP, the live-view URL, and the exact line to say to Iris to register it.
+### With the ESP32-CAM-MB (the easy way)
 
-Open `http://<camera-ip>/` — you should see the robot's view, live, with the
-status JSON updating underneath it.
+1. Push the camera onto the MB board. It only fits one way round: the camera's
+   pins into the MB's two rows of sockets, with the camera lens facing away
+   from the micro-USB socket.
+2. Micro-USB to the PC. On Windows, if no COM port appears, install the
+   **CH340 driver** (`CH341SER`) — Linux and macOS have it built in.
+3. Arduino IDE → install the **esp32** boards package (Espressif Systems), 2.0.5 or newer.
+4. **Tools → Board →** "AI Thinker ESP32-CAM"; **Partition Scheme →** "Huge APP";
+   **PSRAM →** "Enabled"; **Upload Speed →** `115200`. Faster speeds often fail
+   on the CH340 — "timed out waiting for packet header" is that, not a broken board.
+5. Copy `esp32-cam/robot_eye/config.example.h` to `config.h` and fill in your
+   WiFi name and password. (`config.h` is gitignored, so your password stays local.)
+6. Click Upload. Most MB boards wire the CH340's DTR/RTS to the reset and boot
+   pins, so the IDE puts the board into flash mode by itself. If instead you
+   see `Connecting........_____....` and a failure: hold **IO0**, tap **RST**,
+   release **IO0**, and click Upload again while it says "Connecting".
+7. Press **RST**. Serial Monitor at **115200 baud** prints the IP, the live-view
+   URL, and the exact line to say to Iris to register it.
+
+If the monitor shows a boot loop with `Brownout detector was triggered`, it is
+the USB port or cable — see [Powering it](#powering-it).
+
+### Without it (bare board + USB-serial adapter)
+
+1. Wire the adapter: `5V→5V`, `GND→GND`, `TX→U0R`, `RX→U0T`.
+2. Hold **GPIO0 to GND**, press reset — the board is in flash mode. Upload.
+3. Disconnect GPIO0, press reset, and open the Serial Monitor as above.
+
+Either way: open `http://<camera-ip>/` — you should see the robot's view, live,
+with the status JSON updating underneath it.
+
+## Powering it
+
+The camera wants **5V at ~180 mA steady, spiking past 300 mA** whenever the
+WiFi radio transmits. Everything below follows from that.
+
+**From the PC.** Fine for the desk. A USB 2.0 port is rated at 500 mA, which
+is enough but not by much; a USB 3.0 port (blue) gives 900 mA and is the
+better choice. A long thin cable drops voltage on the spikes — use a short one.
+
+**From a power bank — for the robot.** Works well, with three things to know:
+
+1. **Auto-off.** Most banks switch themselves off when the load drops below
+   50–100 mA, assuming nothing is plugged in. This firmware keeps the WiFi
+   radio awake (`WiFi.setSleep(false)`, for frame latency) so the camera sits
+   around 180 mA and stays above that line. If a bank still cuts out, it wants
+   a "low-current" or "always-on" mode — some have it as a double-tap on the
+   button — or a different bank.
+2. **Brownouts.** A cheap bank plus a thin cable sags on the transmit spikes,
+   and the camera resets. `GET /status` reports `reset_reason`, and
+   `"brownout"` there means the supply, not the code. Short thick cable, and a
+   bank rated **2 A or more** per port.
+3. **Runtime.** A 10,000 mAh bank holds about 37 Wh on paper and delivers
+   roughly 25 Wh after conversion losses. The camera draws about 1 W, so
+   figure **~20 hours** for the camera alone; the S3 node with two OLEDs, the
+   amplifier and sensors is another 1.5–2.5 W, so both together on one bank is
+   more like **7–10 hours**. Speaking through the amplifier costs the most.
+
+**One bank for both boards.** A bank with two USB outputs runs the camera on
+one and the S3 on the other, and they share ground through the bank. It does
+not actually matter if they don't — there is no wire between the two boards,
+only WiFi — so two separate banks work just as well.
+
+**Charging while running.** Most banks stop their output the moment a charger
+is plugged in, and resume when it is pulled — so the robot reboots twice a
+day. If the robot is meant to dock, look for a bank that lists **pass-through
+charging**; it is not a given.
+
+**Not from the S3's 3.3V pin.** The S3 board's regulator is already feeding two
+OLEDs and an amplifier. The camera's transmit spikes on top of that brown out
+both boards at once.
 
 ## Config worth knowing about
 
@@ -284,7 +352,11 @@ before now goes somewhere else.
 
 | Symptom | Look at |
 |---|---|
-| Reboots, or "camera init failed" | The 5V supply. `GET /status` → `reset_reason: "brownout"` says so outright. |
+| Reboots, or "camera init failed" | The 5V supply. `GET /status` → `reset_reason: "brownout"` says so outright. On a power bank: shorter cable, or a bank rated 2 A+. |
+| No COM port when plugged into the MB board | Windows needs the CH340 driver (`CH341SER`). Also try another cable — many are charge-only with no data lines. |
+| Upload fails: "timed out waiting for packet header" | Upload Speed → `115200`. The CH340 on the MB board is unreliable faster than that. |
+| Upload fails at `Connecting........_____` | Hold **IO0**, tap **RST**, release **IO0**, retry. The MB's auto-reset is not wired on every unit. |
+| Power bank switches off after a minute | Its auto-off threshold. Look for a low-current / always-on mode, often a double-tap of the button. |
 | Picture upside down or mirrored | `GET /settings?vflip=1&hmirror=1`. No reflash. |
 | Face not recognised at conversational distance | `GET /settings?framesize=xga`. Pixels across the face is the biggest lever. |
 | "There's someone there, but too far away" | Come closer, or raise the framesize. The brain is refusing to guess from a dozen pixels rather than answering wrongly. |

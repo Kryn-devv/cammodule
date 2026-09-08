@@ -35,12 +35,21 @@
  *   - Tools > Board > "AI Thinker ESP32-CAM"
  *   - Tools > Partition Scheme > "Huge APP"
  *   - Tools > PSRAM > "Enabled"
+ *   - Tools > Upload Speed > 115200 (the CH340 on the MB board is flaky faster)
  *   - Copy config.example.h to config.h and fill in your WiFi details
  *
- * Wiring for flashing (the AI-Thinker board has no USB port):
+ * Flashing with the ESP32-CAM-MB board (camera pushed onto it, micro-USB to
+ * the PC): just click Upload. Most MB boards let the IDE reset into flash mode
+ * by itself; if it sits at "Connecting....", hold IO0, tap RST, release IO0.
+ *
+ * Flashing a bare board (no MB, the board itself has no USB port):
  *   - USB-serial adapter: 5V->5V, GND->GND, TX->U0R, RX->U0T
  *   - Hold GPIO0 to GND while pressing reset to enter flash mode;
  *     disconnect GPIO0 and reset again to run.
+ *
+ * Power: 5V at ~180 mA steady, spikes past 300 mA on WiFi transmit. A power
+ * bank rated 2 A per port on a short cable is fine; the S3's 3.3V pin is not.
+ * If /status reports reset_reason "brownout", it is the supply, not the code.
  */
 
 #include <strings.h>    // strcasecmp, for the framesize names
