@@ -77,6 +77,7 @@ static unsigned long lastCaptureMs = 0;
 static uint32_t lastCaptureBytes = 0;
 
 static bool mdnsUp = false;
+static bool wifiWasDown = false;
 static unsigned long wifiRetryAtMs = 0;
 static unsigned long wifiBackoffMs = 2000;
 static uint32_t wifiDrops = 0;
@@ -926,38 +927,48 @@ static bool wifiConnect(unsigned long timeoutMs) {
 // Called from loop(). Reconnects with a doubling backoff and re-announces
 // mDNS, which the old firmware forgot — after a router reboot the name went
 // away and only the raw IP still worked.
+//
+// Nothing here blocks. An earlier version sat in an 8-second wait for the
+// association to come up, which also held up everything else loop() is
+// responsible for: a timed flash pulse could overstay by those 8 seconds, and
+// the motion sampler skipped its cadence entirely. Instead the attempt is
+// kicked off and the next pass through loop() reads the result.
 static void wifiMaintain() {
+  const unsigned long now = millis();
+
   if (WiFi.status() == WL_CONNECTED) {
-    wifiBackoffMs = 2000;
+    if (wifiWasDown) {
+      Serial.printf("WiFi back, IP: %s\n", WiFi.localIP().toString().c_str());
+      statusLed(true);
+      announceMdns();
+      // The room has had time to change while we were off the air, so the
+      // stored reference frame is stale — comparing against it would report
+      // a person walking in when nothing of the sort happened.
+      motion.resetBaseline();
+      wifiWasDown = false;
+      wifiRetryAtMs = 0;
+      wifiBackoffMs = 2000;
+    }
     return;
   }
 
-  const unsigned long now = millis();
-  if (wifiRetryAtMs != 0 && now < wifiRetryAtMs) return;
-
-  if (wifiRetryAtMs == 0) {
+  if (!wifiWasDown) {
+    wifiWasDown = true;
     wifiDrops++;
     Serial.println("WiFi dropped.");
     statusLed(false);
+    wifiRetryAtMs = now;      // first retry immediately
   }
 
-  Serial.printf("Reconnecting (next try in %lus if this fails)...\n", wifiBackoffMs / 1000);
+  if (now < wifiRetryAtMs) return;
+
+  Serial.printf("Reconnecting (next attempt in %lus if this one fails)...\n",
+                wifiBackoffMs / 1000);
   WiFi.disconnect();
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-  const unsigned long deadline = now + 8000;
-  while (WiFi.status() != WL_CONNECTED && millis() < deadline) delay(200);
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("WiFi back, IP: %s\n", WiFi.localIP().toString().c_str());
-    statusLed(true);
-    announceMdns();
-    wifiRetryAtMs = 0;
-    wifiBackoffMs = 2000;
-  } else {
-    wifiRetryAtMs = millis() + wifiBackoffMs;
-    wifiBackoffMs = wifiBackoffMs < 60000 ? wifiBackoffMs * 2 : 60000;
-  }
+  wifiRetryAtMs = now + wifiBackoffMs;
+  wifiBackoffMs = wifiBackoffMs < 60000 ? wifiBackoffMs * 2 : 60000;
 }
 
 /* ───────────────────────────── setup / loop ───────────────────────────── */
@@ -1031,8 +1042,7 @@ void loop() {
   // nobody is watching.
   motion.tick(now, MOTION_HOLD_MS);
   if (streamClients == 0 && !captureBusy &&
-      now - lastMotionSampleMs >= MOTION_INTERVAL_MS &&
-      WiFi.status() == WL_CONNECTED) {
+      now - lastMotionSampleMs >= MOTION_INTERVAL_MS) {
     lastMotionSampleMs = now;
     camera_fb_t* fb = esp_camera_fb_get();
     if (fb != nullptr) {

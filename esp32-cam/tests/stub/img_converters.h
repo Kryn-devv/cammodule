@@ -25,3 +25,4 @@ extern int             g_decodeCalls;
 extern jpg_scale_t     g_lastScale;
 
 bool jpg2rgb565(const uint8_t* src, size_t src_len, uint8_t* out, jpg_scale_t scale);
+bool frame2jpg(camera_fb_t* fb, uint8_t quality, uint8_t** out, size_t* out_len);
