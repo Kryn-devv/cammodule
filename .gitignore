@@ -5,3 +5,11 @@ esp32-cam/robot_eye/config.h
 build/
 *.bin
 *.elf
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Host test binaries
+esp32-cam/tests/*.out
