@@ -91,7 +91,6 @@ window.NOVA_CONTENT = (() => {
         '4 · Deterministic NLU — 80 intent rules, tool dispatch in milliseconds, offline',
         '5 · LLM agent loop — plan, call tools, observe, repeat',
       ],
-      chips: ['an <b>event bus</b> streams planning + tool activity to the UI over WebSocket'],
       labels: [
         { text: '1 · Wake word', pos: [-(STACK_R - 0.35), STACK_Y[0] + 0.12, 0.9], c: P.teal },
         { text: '2 · Memory commands', pos: [-(STACK_R - 0.35), STACK_Y[1] + 0.12, 0.9], c: P.peri },
