@@ -82,7 +82,7 @@ window.NOVA_CONTENT = (() => {
     {
       id: 'pipeline', label: 'Kernel', len: 190, align: 'right', shape: 'stack', spin: 0, fixedProps: true,
       q: 'How does it work?', eyebrow: 'The kernel',
-      cam: { pos: [0, 7.6, 7.6], look: [0, -0.2, 0], drift: [0, -11.0, 0] }, shift: -1.6,
+      cam: { pos: [0, 8.2, 9.6], look: [0, 0, 0], drift: [0, -8.6, 0] }, shift: -1.6,
       heading: 'Every sentence falls through <span class="hl">five layers</span>',
       lede: 'The first layer that can answer, does. Cheap first, the LLM last.',
       lines: [
@@ -108,7 +108,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'agent', label: 'Agent?', len: 170, align: 'left', shape: 'loop', spin: 0,
+      id: 'agent', label: 'Agent?', len: 170, align: 'left', shape: 'loop', spin: 0, phoneLift: 2.4,
       q: 'Is it an agent?', eyebrow: 'The big question',
       cam: { pos: [1.0, 0.3, 9.6], look: [0, 0, 0], drift: [-2.0, 0.2, 0] }, shift: 2.1,
       heading: 'Is it an agent? <span class="hl">Yes</span> — when it needs to be.',
@@ -142,7 +142,7 @@ window.NOVA_CONTENT = (() => {
       id: 'tools', label: 'Tools', len: 160, align: 'right', shape: 'constellation', spin: 0.12,
       q: 'What does it do?', eyebrow: 'What it does',
       cam: { pos: [0, 0.3, 10.2], look: [0, 0, 0], drift: [0, -0.3, -1.0] }, shift: -2.3,
-      heading: '<span class="hl">86 tools</span>, six families',
+      heading: '<span class="hl">86&nbsp;tools</span>, six&nbsp;families',
       lede: 'Everything the agent can reach for, from opening an app to writing a deck.',
       lines: [
         '<b>Desktop</b> — apps, windows, volume, screenshots',
@@ -161,7 +161,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'brain', label: 'LLM', len: 150, align: 'left', shape: 'providers', spin: 0.05,
+      id: 'brain', label: 'LLM', len: 150, align: 'left', shape: 'providers', spin: 0.05, phoneLift: 2.6,
       q: 'How does it work?', eyebrow: 'The LLM',
       cam: { pos: [0, 0.5, 11.4], look: [0, 0.15, 0], drift: [0, -0.5, -0.4] }, shift: 2.0,
       heading: 'One brain, <span class="cool">eight model providers</span>',
@@ -228,7 +228,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'eye', label: 'The eye', len: 160, align: 'right', shape: 'eye', spin: 0,
+      id: 'eye', label: 'The eye', len: 160, align: 'right', shape: 'eye', spin: 0, phoneLift: 2.4,
       q: 'How does it work?', eyebrow: 'cammodule',
       cam: { pos: [2.4, 1.2, 8.4], look: [0, 0.5, 1.0], drift: [-2.4, -0.6, 0] },
       heading: 'The <span class="warm">eye</span> is a tiny web server',
@@ -259,7 +259,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'demo', label: 'Example', len: 230, align: 'left', shape: 'apple', spin: 0.25, shift: 1.6, fixedProps: true,
+      id: 'demo', label: 'Example', len: 230, align: 'left', shape: 'apple', spin: 0.25, shift: 1.6, fixedProps: true, phoneLift: 2.6,
       q: 'All three questions', eyebrow: 'Worked example · Phase 7, planned',
       cam: { pos: [0, 0.7, 9.0], look: [0, 0.5, 0], drift: [0, -0.2, -1.0] },
       heading: '“Hey IRIS, <span class="hl">is this apple ripe?</span>”',
@@ -289,7 +289,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'safety', label: 'Guardrails', len: 150, align: 'left', shape: 'shield', spin: 0.1, fixedProps: true,
+      id: 'safety', label: 'Guardrails', len: 150, align: 'left', shape: 'shield', spin: 0.1, fixedProps: true, phoneLift: 2.4,
       q: 'How does it work?', eyebrow: 'Guardrails',
       cam: { pos: [0, 1.6, 9.2], look: [0, 0.3, 0], drift: [0, -0.8, -0.6] }, shift: 1.6,
       heading: 'Powerful, so it is <span class="hl">guarded</span>',
@@ -316,7 +316,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'finale', label: 'So…', len: 140, align: 'bottom', shape: 'text', spin: 0, phoneLift: 2.4,
+      id: 'finale', label: 'So…', len: 140, align: 'bottom', shape: 'text', spin: 0, phoneLift: 4.8, phoneZoom: 2.6,
       cam: { pos: [0, -2.3, 9.4], look: [0, -2.3, 0], drift: [0, 0, -0.6] },
       html: `
         <p class="eyebrow"><span class="q">So…</span> is it an agent?</p>
