@@ -177,6 +177,8 @@ main{ position:relative; z-index:3; }
 .scene[data-align="bottom"] .copy{ grid-column:1 / -1; justify-self:center; text-align:center; max-width:52rem; }
 .scene[data-align="bottom"] h2{ font-size:clamp(1.8rem, 3.6vw, 3.4rem); }
 .scene[data-scene="demo"] .copy{ max-width:38rem; }
+.scene[data-scene="agent"] h2{ font-size:clamp(1.9rem, 3.7vw, 3.5rem); }
+.scene[data-scene="finale"] h2{ font-size:clamp(1.7rem, 3.2vw, 3rem); }
 .scene[data-scene="demo"] h2{ font-size:clamp(1.6rem, 3vw, 2.8rem); margin-bottom:.9rem; }
 .scene[data-scene="demo"] .chips{ margin-top:.9rem; }
 
@@ -464,7 +466,9 @@ function measure() {
     const top = sec.offsetTop; const span = Math.max(1, sec.offsetHeight - vh);
     geo[i] = { top, span };
   });
+  docSpan = Math.max(1, document.documentElement.scrollHeight - vh);
 }
+let docSpan = 1;
 measure();
 
 function scrollState() {
@@ -677,9 +681,8 @@ const GEN = {
     const n = s.n;
     sphereSurface(s, 0, 0, 0, .5, Math.floor(n * .12), () => C.peri, .04, 1);
     sphereVolume(s, 0, 0, 0, .45, Math.floor(n * .05), C.peri, .6);
-    A.PROV_POS.forEach((p, i) => { const c = i === A.PROV_DOWN ? C.danger : (i === A.PROV_NEXT ? C.ok : C.peri);
-      sphereSurface(s, p[0], p[1], p[2], .3, Math.floor(n * .06), () => c, .03, 1);
-      segment(s, [0, 0, 0], p, Math.floor(n * .025), scalec(i === A.PROV_DOWN ? C.danger : C.faint, .8), .55, .03); });
+    A.PROV_POS.forEach(p => { sphereSurface(s, p[0], p[1], p[2], .3, Math.floor(n * .06), () => C.peri, .03, 1);
+      segment(s, [0, 0, 0], p, Math.floor(n * .025), scalec(C.faint, .8), .55, .03); });
     ring(s, 0, 0, 0, 3.0, Math.floor(n * .15), scalec(C.faint, .7), 'z', .6, .04);
     return s;
   },
@@ -887,7 +890,8 @@ const TRAIL = 16; const trailArr = new Float32Array(TRAIL * 3);
 const trailGeo = new THREE.BufferGeometry(); trailGeo.setAttribute('position', new THREE.BufferAttribute(trailArr, 3).setUsage(THREE.DynamicDrawUsage));
 const trailMat = new THREE.PointsMaterial({ size: .2, map: GLOW, color: new THREE.Color(P.amber), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true });
 const trail = new THREE.Points(trailGeo, trailMat); trail.frustumCulled = false; trail.visible = false; staticWorld.add(trail);
-const trailBuf = []; const beadPos = new THREE.Vector3(), beadTmp = new THREE.Vector3(), beadLast = new THREE.Vector3(1e9, 0, 0);
+const trailPool = Array.from({ length: TRAIL }, () => new THREE.Vector3()); let trailLen = 0, trailHead = 0;
+const beadPos = new THREE.Vector3(), beadTmp = new THREE.Vector3(), beadLast = new THREE.Vector3(1e9, 0, 0);
 const beadLabel = document.createElement('div'); beadLabel.className = 'lbl bead'; labelsRoot.appendChild(beadLabel);
 function beadFor(i, p, out) { beadCurves[i].getPoint(smooth(p), out); return out; }
 function beadText(i, p) { const b = SCENES[i].bead; if (!b) return ''; if (b.labelAt) { for (const [t, txt] of b.labelAt) if (p < t) return txt; return b.labelAt[b.labelAt.length - 1][1]; } return b.label || ''; }
@@ -898,8 +902,12 @@ const Q_KEY = { how: 'How does it work', agent: 'Is it an agent', what: 'What do
 const Q_DONE_AT = { how: 2, agent: 3, what: 4 };   // scene index at which each question counts as answered
 const notesEl = document.getElementById('notes'), notesList = document.getElementById('notesList'), notesScene = document.getElementById('notesScene');
 let lastScene = -1;
+let wasScrolled = false;
 function onSceneChange(i) {
   lastScene = i; const sc = SCENES[i];
+  counterEl.textContent = `${String(i + 1).padStart(2, '0')} / ${String(S).padStart(2, '0')}`;
+  sceneLabelEl.textContent = sc.label;
+  railBtns.forEach((b, k) => b.classList.toggle('on', k === i));
   try { history.replaceState(null, '', '#' + sc.id); } catch (e) { /* file:// or sandbox */ }
   trackerItems.forEach(li => { const k = li.dataset.q; li.classList.toggle('done', i >= Q_DONE_AT[k]); li.classList.toggle('now', !!(sc.q && (sc.q.includes(Q_KEY[k]) || sc.q.startsWith('All')))); });
   notesScene.textContent = `${String(i + 1).padStart(2, '0')} · ${sc.label}`;
@@ -944,13 +952,9 @@ function frame() {
   const damp = reduced ? 1 : 1 - Math.pow(0.0015, dt); // ~exponential smoothing
   gS = Math.abs(st.g - gS) > 3 ? st.g : lerp(gS, st.g, damp);
 
-  // HUD
-  counterEl.textContent = `${String(st.i + 1).padStart(2, '0')} / ${String(S).padStart(2, '0')}`;
-  sceneLabelEl.textContent = SCENES[st.i].label;
-  railBtns.forEach((b, k) => b.classList.toggle('on', k === st.i));
-  const docSpan = Math.max(1, document.documentElement.scrollHeight - vh);
+  // HUD (scene-dependent writes happen once per scene change, inside onSceneChange)
   barEl.style.width = (clamp(st.y / docSpan, 0, 1) * 100).toFixed(2) + '%';
-  document.body.classList.toggle('scrolled', st.y > 40);
+  const scrolled = st.y > 40; if (scrolled !== wasScrolled) { wasScrolled = scrolled; document.body.classList.toggle('scrolled', scrolled); }
   if (st.i !== lastScene) onSceneChange(st.i);
 
   if (!renderer) return;
@@ -1008,20 +1012,20 @@ function frame() {
   {
     const cands = iA === iB ? [iA] : [iA, iB]; let n = 0, wsum = 0; beadPos.set(0, 0, 0); let txt = '';
     for (const i of cands) { if (!beadCurves[i]) continue; const p = clamp(gS - i, 0, 1); const w = iA === iB ? 1 : (i === iA ? 1 - mS : mS); beadFor(i, p, beadTmp); beadPos.addScaledVector(beadTmp, w); wsum += w; n++; if (w >= 0.5) txt = beadText(i, p); }
-    const show = n > 0 && !intro.active;
+    const show = n > 0 && wsum > 1e-4 && !intro.active;   // wsum→0 while a bead scene fades into a bead-less one
     if (show) {
       beadPos.divideScalar(wsum);
       let vis = 0; for (const i of cands) if (beadCurves[i]) vis = Math.max(vis, sceneWeight(i, gS));
       beadGeo.attributes.position.array.set([beadPos.x, beadPos.y, beadPos.z]); beadGeo.attributes.position.needsUpdate = true;
       bead.visible = beadCore.visible = true; beadMat.opacity = vis * .95; beadCoreMat.opacity = vis;
-      if (beadPos.distanceToSquared(beadLast) > 1e-4) { trailBuf.unshift(beadPos.clone()); if (trailBuf.length > TRAIL) trailBuf.length = TRAIL; beadLast.copy(beadPos); }
-      for (let k = 0; k < TRAIL; k++) { const q = trailBuf[Math.min(k, trailBuf.length - 1)] || beadPos; trailArr[k * 3] = q.x; trailArr[k * 3 + 1] = q.y; trailArr[k * 3 + 2] = q.z; }
+      if (beadPos.distanceToSquared(beadLast) > 1e-4) { trailHead = (trailHead + TRAIL - 1) % TRAIL; trailPool[trailHead].copy(beadPos); trailLen = Math.min(TRAIL, trailLen + 1); beadLast.copy(beadPos); }
+      for (let k = 0; k < TRAIL; k++) { const q = trailLen ? trailPool[(trailHead + Math.min(k, trailLen - 1)) % TRAIL] : beadPos; trailArr[k * 3] = q.x; trailArr[k * 3 + 1] = q.y; trailArr[k * 3 + 2] = q.z; }
       trailGeo.attributes.position.needsUpdate = true; trail.visible = true; trailMat.opacity = vis * .45;
       beadTmp.copy(beadPos).add(staticWorld.position).project(camera);
       const bx = (beadTmp.x * .5 + .5) * innerWidth, by = (-beadTmp.y * .5 + .5) * innerHeight;
       if (txt && beadTmp.z < 1) { beadLabel.textContent = txt; beadLabel.style.visibility = 'visible'; const flip = bx > innerWidth * 0.6; beadLabel.style.transform = flip ? `translate(${(bx - 16).toFixed(1)}px, ${(by - 26).toFixed(1)}px) translate(-100%, 0)` : `translate(${(bx + 16).toFixed(1)}px, ${(by - 26).toFixed(1)}px)`; beadLabel.style.opacity = vis.toFixed(3); }
       else { beadLabel.style.opacity = '0'; beadLabel.style.visibility = 'hidden'; }
-    } else { bead.visible = beadCore.visible = trail.visible = false; beadLabel.style.opacity = '0'; beadLabel.style.visibility = 'hidden'; if (trailBuf.length) trailBuf.length = 0; }
+    } else { bead.visible = beadCore.visible = trail.visible = false; beadLabel.style.opacity = '0'; beadLabel.style.visibility = 'hidden'; trailLen = 0; }
   }
 
   // render
@@ -1100,12 +1104,16 @@ addEventListener('resize', () => {
   }, 120);
 });
 addEventListener('load', () => { measure(); ScrollTrigger.refresh(); });
+addEventListener('hashchange', () => {   // typing #eye into the address bar jumps there
+  const idx = SCENES.findIndex(sc => sc.id === decodeURIComponent(location.hash.slice(1)));
+  if (idx >= 0 && idx !== scrollState().i) goTo(idx);
+});
 
 // fonts may shift section heights; and the text shape needs the display face
 const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
 Promise.race([fontsReady, new Promise(r => setTimeout(r, 1800))]).then(() => { shapeCache.delete('text'); if (curA === 'text' || curB === 'text') { curA = null; curB = null; } measure(); ScrollTrigger.refresh(); });
 
-if (renderer) requestAnimationFrame(frame); else { document.getElementById('loader').classList.add('done'); requestAnimationFrame(function hudOnly() { requestAnimationFrame(hudOnly); const st = scrollState(); counterEl.textContent = `${String(st.i + 1).padStart(2, '0')} / ${String(S).padStart(2, '0')}`; sceneLabelEl.textContent = SCENES[st.i].label; railBtns.forEach((b, k) => b.classList.toggle('on', k === st.i)); barEl.style.width = (clamp(st.y / Math.max(1, document.documentElement.scrollHeight - vh), 0, 1) * 100).toFixed(2) + '%'; document.body.classList.toggle('scrolled', st.y > 40); }); }
+if (renderer) requestAnimationFrame(frame); else { document.getElementById('loader').classList.add('done'); requestAnimationFrame(function hudOnly() { requestAnimationFrame(hudOnly); const st = scrollState(); barEl.style.width = (clamp(st.y / docSpan, 0, 1) * 100).toFixed(2) + '%'; const sc = st.y > 40; if (sc !== wasScrolled) { wasScrolled = sc; document.body.classList.toggle('scrolled', sc); } if (st.i !== lastScene) onSceneChange(st.i); }); }
 </script>
 </body>
 </html>

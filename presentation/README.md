@@ -13,11 +13,15 @@ One sentence — *"Hey IRIS, is this apple ripe?"* — travels with you through
 the scenes as an amber bead: it rides the waveform, falls through the five
 layers, runs around the agent loop, bounces off a rate-limited provider,
 leaves the camera as a JPEG and arrives at the vision model. The three
-questions the teacher asked sit in the top bar and tick off as the scenes
-answer them.
+questions the teacher asked sit in the top bar (desktop only, hidden on
+phones) and tick off the first time a scene answers each one; later scenes
+add depth.
 
 **Zero build step.** Open `presentation/index.html` in a browser. The 3D layer
-loads Three.js and GSAP from a CDN, so it needs internet the first time.
+loads Three.js, GSAP and the fonts from CDNs, so the laptop needs internet
+every time it opens the page. Rehearse on the room's WiFi, or copy the three
+libraries next to `index.html` and point the import map and script tags at
+them.
 
 ## Presenting
 
@@ -72,7 +76,7 @@ Change both if you recolour.
 | 3 | Kernel | five stacked layers | how it works — the 5-layer pipeline |
 | 4 | Agent? | plan → act → observe → repeat loop | **is it an agent? yes** |
 | 5 | Tools | six tool clusters | what it does — 86 tools |
-| 6 | Brains | provider ring with failover | how it works — LLM router |
+| 6 | LLM | provider ring with failover | how it works — the multi-provider router |
 | 7 | Memory | four crystals | how it works — memory types |
 | 8 | Body | the robot | what it does — ESP32 boards |
 | 9 | The eye | ESP32-CAM board + frame frustum | how it works — this repo's endpoints |
@@ -82,7 +86,11 @@ Change both if you recolour.
 
 Facts come from the IRIS README and this repository's README and firmware.
 Where something is planned rather than built (the brain's camera tool and
-vision model are Phase 7 on the IRIS roadmap), the site says so on screen.
+vision model are Phase 7 on the IRIS roadmap), the site says so on screen in
+every scene that touches it: the agent loop's bead label, the eye's endpoint
+line, the worked example's eyebrow and chip, and the finale's summary. The
+provider-failover animation is marked as an illustration and colours no
+vendor as failing.
 
 ## Under the hood
 
