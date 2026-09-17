@@ -98,7 +98,8 @@ body.no-gl #vignette{ background: radial-gradient(60% 50% at 50% 40%, #16224a 0%
 
 /* projector mode: lift the ground, plate the copy, brighten the dust */
 body.projector{ --bg:#0E1C19; --bg-2:#132521; --ink:#FFFFFF; --ink-soft:#D6E2DE; --ink-faint:#93A7A1; }
-body.projector .copy{ background:rgba(6,12,11,.74); padding:clamp(16px, 2vw, 28px); border-radius:18px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+body.projector .copy{ background:rgba(6,12,11,.9); padding:clamp(12px, 1.5vw, 20px); border-radius:16px; }
+body.projector .chips{ margin-top:.8rem; }
 body.projector #vignette{ opacity:.4; }
 body.projector .lbl{ background:rgba(6,12,11,.9); font-size:clamp(15px, 1.2vw, 19px); }
 body.projector .copy{ backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(6,12,11,.9); }
@@ -292,7 +293,7 @@ h2 .cool{ color:var(--accent-3); }
   .scene[data-align="left"] .copy, .scene[data-align="right"] .copy{ grid-column:1; justify-self:start; max-width:none; }
   .scene[data-scene="hero"] .view{ align-items:center; padding-bottom:0; }
   .rail{ display:none; }
-  .tracker{ display:none; }
+  .hud .tracker{ display:none; }
   .hud{ font-size:11px; }
   #notes{ left:16px; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); }
   .counter em{ display:none; }

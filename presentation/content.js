@@ -316,7 +316,7 @@ window.NOVA_CONTENT = (() => {
       ],
     },
     {
-      id: 'finale', label: 'So…', len: 140, align: 'bottom', shape: 'text', spin: 0, phoneLift: 4.8, phoneZoom: 2.6,
+      id: 'finale', label: 'So…', len: 140, align: 'bottom', shape: 'text', spin: 0, phoneLift: 4.4, phoneZoom: 2.6,
       cam: { pos: [0, -2.3, 9.4], look: [0, -2.3, 0], drift: [0, 0, -0.6] },
       html: `
         <p class="eyebrow"><span class="q">So…</span> is it an agent?</p>
