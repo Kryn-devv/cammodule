@@ -33,6 +33,14 @@ block the brain from grabbing a `/capture` frame.
 With mDNS the camera is reachable as `http://robot-eye.local` — no hardcoded
 IP needed.
 
+## The presentation site
+
+[`presentation/`](presentation/) is an immersive, scroll-driven 3D website that
+explains the whole system to a class — how the assistant works, whether it is
+an agent, and what it does — with this camera module as "the eye". Open
+`presentation/index.html` in a browser; see its [README](presentation/README.md)
+for presenter keys and how to edit the copy.
+
 ## Hardware
 
 - AI-Thinker ESP32-CAM (OV2640 sensor)
