@@ -33,7 +33,7 @@
   --gutter: clamp(16px, 5vw, 72px);
   --vh: 100vh;
 }
-@supports (height: 100dvh){ :root{ --vh: 100dvh; } }
+@supports (height: 100svh){ :root{ --vh: 100svh; } }   /* small viewport unit: stable while a phone's address bar shows/hides */
 
 *,*::before,*::after{ box-sizing:border-box; }
 [hidden]{ display:none !important; }
@@ -457,7 +457,9 @@ const barEl = document.getElementById('bar');
 let vh = innerHeight;
 const geo = []; // {top, span} per scene; span = scrollable distance inside the scene
 function measure() {
-  vh = innerHeight;
+  // the sticky view is exactly one (small) viewport tall, so measuring it keeps
+  // scene spans stable while a phone's browser toolbar shows or hides
+  vh = sections[0] ? sections[0].querySelector('.view').offsetHeight || innerHeight : innerHeight;
   sections.forEach((sec, i) => {
     const top = sec.offsetTop; const span = Math.max(1, sec.offsetHeight - vh);
     geo[i] = { top, span };
@@ -1087,8 +1089,16 @@ document.getElementById('help').addEventListener('click', e => { if (e.target.id
 document.getElementById('btnAgain')?.addEventListener('click', () => { goTo(0); setTimeout(() => { intro.active = true; intro.t = 0; intro.start = performance.now(); gS = 0; curA = null; }, reduced ? 50 : 1150); });
 
 // ---------------------------------------------------------------- resize
-let resizeT;
-addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { measure(); resize(); ScrollTrigger.refresh(); }, 120); });
+let resizeT, lastW = innerWidth;
+addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => {
+    const keep = scrollState();   // keep the same point in the scene (a no-op when only a phone toolbar toggled, since heights use svh)
+    lastW = innerWidth;
+    measure(); resize(); ScrollTrigger.refresh();
+    if (!navBusy) { window.scrollTo(0, Math.round(geo[keep.i].top + geo[keep.i].span * keep.p)); gS = keep.g; }
+  }, 120);
+});
 addEventListener('load', () => { measure(); ScrollTrigger.refresh(); });
 
 // fonts may shift section heights; and the text shape needs the display face
